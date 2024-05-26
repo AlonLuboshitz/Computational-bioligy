@@ -1,6 +1,8 @@
 import tkinter as tk
 import random
 from collections import Counter
+
+#global variables
 labels = []
 labels_colors_before = []
 labels_colors_after = []
@@ -31,13 +33,15 @@ def create_board():
         labels_colors_before.append(color_row)
     return labels
 
-
+"""
+function gets i,j, lokk for the  colors of the 8 niegerbours clock wise and splits it to 2 vectors:
+    color_vec_column - neighbors above or below the cell
+    color_voc_rows - all the other vectors
+----- 
+returns color_vec = [(i-1,j-1).....(i,j-1)]
+"""
 def get_nieghbours(i,j):
-    '''function gets i,j, lokk for the  colors of the 8 niegerbours clock wise and splits it to 2 vectors:
-        color_vec_column - neighbors above or below the cell
-        color_voc_rows - all the other vectors
-    ----- 
-    returns color_vec = [(i-1,j-1).....(i,j-1)]'''
+
     color_vec_column = []
     
     color_voc_rows = []
@@ -83,9 +87,11 @@ def color_count_column(column_vec,row_vec):
     else:
         color = random.choices(["black", "white"], weights=[0.5, 0.5])[0]
     return color 
+"""
+Function to change the node color by the niehbrous in the colmuns
+"""
+def change_color_by_column(nieghbours_vec):
 
-def change_color_by_column(current_color,nieghbours_vec):
-    '''Function to change the node color by the niehbrous in the colmuns'''
     colors = []
     colors.append(nieghbours_vec[1])
     colors.append(nieghbours_vec[5])
@@ -136,11 +142,12 @@ def on_button_click(row, col):
 if __name__ == "__main__":
     # Create the main window
     root = tk.Tk()
-    root.title("10x10 Board")
+    root.title("cell automata")
+
+    #create boad and run the rules
     create_board()
     recu_inverse()
-    # for i in range(250):
-    #     inverse_colors()
 
+    # show board until closed
     root.mainloop()
 
