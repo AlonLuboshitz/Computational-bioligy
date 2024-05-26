@@ -55,7 +55,16 @@ def get_nieghbours(i,j):
     return 0,0
 
 """
-this function counts he number of neighbirs of each 'kind' and decieds which color will the cell be accrding to the ratio - 
+this function counts he number of neighbirs of each 'kind' and decieds which color will the cell be accrding to-
+    1 -consider each black cell as 1, and each white cell as 0
+    2 - count number of *black* cells of the column vec (out of 2) and compute erlative ratio
+    3 - count number of *white* cells of the rows vec (out of 6) and compute erlative ratio
+    4 - set black ratio as the sum of 0.4 * (2) +  0.6 * (3), (if the non columns cells are white, the cel wants
+        to be the opposite- black) , ehile giving the column a 'weight' of 0.4 and others a 'weight' of 0.6
+        in the decision making. 
+    5 - if black ration is bigger than 0.5 - choose black
+        if black ration is smaller than 0.5 - choose black
+        if black ration equals to 0.5 - choose randomly between black and white
 ----
 return the chosen color
 """
@@ -65,9 +74,14 @@ def color_count_column(column_vec,row_vec):
     counter_column = Counter(column_vec)
     counter_row = Counter(row_vec)
     # get ratio for black
-    black = 0.4*(counter_column["black"]/2) + 0.6*(counter_row["white"]/6)
+    black_ratio = 0.4*(counter_column["black"]/2) + 0.6*(counter_row["white"]/6)
     # randomley choose with the given biased ratio
-    color = random.choices(["black", "white"], weights=[black, 1-black])[0]
+    if black_ratio > 0.5:
+        color="black"
+    elif black_ratio <0.5:
+        color="white"
+    else:
+        color = random.choices(["black", "white"], weights=[0.5, 0.5])[0]
     return color 
 
 def change_color_by_column(current_color,nieghbours_vec):
@@ -91,7 +105,7 @@ def inverse_colors():
                 inverse_color = color_count_column(col_vec,row_vec)
                 label.config(bg=inverse_color)
     root.update()
-    switch
+    switch_color_labels()
 
 """
 resets the labels_colors_before matrix to the new given colors
@@ -102,11 +116,6 @@ def switch_color_labels():
             color = label.cget("bg")
             labels_colors_before[i][j] = color
 
-
-# def get_label_color(row, col):
-#     if 0 <= row < len(labels) and 0 <= col < len(labels[0]):
-#         return labels[row][col].cget("bg")
-#     return None
 
 """
 this function runs recursivley the function inverse_colors and apply it on the grid each x ms
