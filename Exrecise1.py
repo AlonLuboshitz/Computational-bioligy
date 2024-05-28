@@ -4,15 +4,15 @@ from collections import Counter
 
 #global variables
 labels = []
-labels_colors_before = []
-labels_colors_after = []
+labels_colors = []
 rows = 50
 columns = 50
 color_dict ={"black": "white", "white": "black"}
+scores =[]
 
 """
 create initial board with 50-50 ratio of black and whote labels (cells).
-saves chosen colors for each node in the matrix -labels_colors_before for downstream anaylsis.
+saves chosen colors for each node in the matrix -labels_colors for downstream anaylsis.
 ------
 returns labels matrix
 """
@@ -30,7 +30,7 @@ def create_board():
             label.grid(row=row, column=col)
             row_labels.append(label)
         labels.append(row_labels)
-        labels_colors_before.append(color_row)
+        labels_colors.append(color_row)
     return labels
 
 """
@@ -47,14 +47,14 @@ def get_nieghbours(i,j):
     color_voc_rows = []
     # check if the nieghbours are in the board
     if i > 0 and i < (rows-1) and j > 0 and j < (columns-1):
-        color_vec_column.append(labels_colors_before[i+1][j])
-        color_vec_column.append(labels_colors_before[i-1][j])
-        color_voc_rows.append(labels_colors_before[i-1][j-1])
-        color_voc_rows.append(labels_colors_before[i-1][j+1])
-        color_voc_rows.append(labels_colors_before[i][j+1])
-        color_voc_rows.append(labels_colors_before[i+1][j+1])
-        color_voc_rows.append(labels_colors_before[i+1][j-1])
-        color_voc_rows.append(labels_colors_before[i][j-1])
+        color_vec_column.append(labels_colors[i+1][j])
+        color_vec_column.append(labels_colors[i-1][j])
+        color_voc_rows.append(labels_colors[i-1][j-1])
+        color_voc_rows.append(labels_colors[i-1][j+1])
+        color_voc_rows.append(labels_colors[i][j+1])
+        color_voc_rows.append(labels_colors[i+1][j+1])
+        color_voc_rows.append(labels_colors[i+1][j-1])
+        color_voc_rows.append(labels_colors[i][j-1])
         return color_vec_column,color_voc_rows
     return 0,0
 
@@ -114,22 +114,75 @@ def inverse_colors():
     switch_color_labels()
 
 """
-resets the labels_colors_before matrix to the new given colors
+resets the labels_colors matrix to the new given colors
 """
 def switch_color_labels():
     for i,row in enumerate(labels):
         for j,label in enumerate(row):
             color = label.cget("bg")
-            labels_colors_before[i][j] = color
+            labels_colors[i][j] = color
+"""
+    calculate the score for the columns:
+    averge of the maximum continous colors of each column
+"""
+def col_score():
+    
+    col_scores= []
+    for j in range(columns):
+        temp_color = labels_colors[0][j]
+        temp_max = 0
+        count = 0
+        for i in range(rows):
+            color = labels_colors[i][j]
+            # if colores identical 
+            if color == temp_color:
+                count+=1
+            # else- different colors, reset the count
+            else:
+                if (temp_max < count):
+                    temp_max = count
+                temp_color = color
+                count = 1
+        col_scores.append(temp_max)
+    return (sum(col_scores) / columns)
 
+"""
+    calculate the score for the rows:
+    averge of the number of "switching colors" in each row
+    for exmp: *white, black, white*, white, *black* --> 4
+"""
+def row_score():
+    row_scores= []
+    for i in range(rows):
+        count = 0
+        temp_color = labels_colors[i][0]
+        for j in range(1, columns):
+            color = labels_colors[i][j]
+            if color != temp_color:
+                count+=1
+                temp_color = color
 
+        row_scores.append(count)
+    return (sum(row_scores) / rows)
+
+"""
+calculate the board score according to the col_score and row_score, and appends it to the score array
+"""
+def total_score():
+    score = (0.4 * col_score()) + (0.6 * row_score())
+    scores.append(score)
 """
 this function runs recursivley the function inverse_colors and apply it on the grid each x ms
+for each run it calculates the board score
 """
 def recu_inverse():
+    
     inverse_colors()
     x=10
+    total_score()
+    print(scores)
     root.after(x, recu_inverse)
+
 
 """
 prints which botton has been pressed on the grid
