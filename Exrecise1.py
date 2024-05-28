@@ -1,6 +1,7 @@
 import tkinter as tk
 import random
 from collections import Counter
+import sys
 
 #global variables
 labels = []
@@ -193,6 +194,7 @@ def on_button_click(row, col):
 
 
 if __name__ == "__main__":
+    output_file = sys.argv[1]
     # Create the main window
     root = tk.Tk()
     root.title("cell automata")
@@ -204,3 +206,7 @@ if __name__ == "__main__":
     # show board until closed
     root.mainloop()
 
+    # print scores to file
+    with open(output_file, 'w') as file:
+        for run, score in enumerate(scores):
+            file.write(f"{run}: {score}\n")  # Write each element on a new line
