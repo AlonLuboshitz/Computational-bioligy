@@ -1,15 +1,20 @@
 import tkinter as tk
 import random
 from collections import Counter
-import sys
-
+import numpy as np
+from tkinter import ttk
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 #global variables
+all_scores = []
 labels = []
 labels_colors = []
-rows = 50
-columns = 50
+rows = 80
+columns = 80
 color_dict ={"black": "white", "white": "black"}
 scores =[]
+iteration_counter = 0
+max_iterations = 250
 
 """
 create initial board with 50-50 ratio of black and whote labels (cells).
@@ -27,9 +32,10 @@ def create_board():
             color_row.append(color)
 
             # create label and save it
-            label = tk.Label(root, bg=color, borderwidth=1, relief="solid", width=8, height=2)
+            label = tk.Label(board_frame, bg=color, borderwidth=1, relief="solid", width=1, height=1)
             label.grid(row=row, column=col)
             row_labels.append(label)
+
         labels.append(row_labels)
         labels_colors.append(color_row)
     return labels
@@ -47,17 +53,17 @@ def get_nieghbours(i,j):
     
     color_voc_rows = []
     # check if the nieghbours are in the board
-    if i > 0 and i < (rows-1) and j > 0 and j < (columns-1):
-        color_vec_column.append(labels_colors[i+1][j])
-        color_vec_column.append(labels_colors[i-1][j])
-        color_voc_rows.append(labels_colors[i-1][j-1])
-        color_voc_rows.append(labels_colors[i-1][j+1])
-        color_voc_rows.append(labels_colors[i][j+1])
-        color_voc_rows.append(labels_colors[i+1][j+1])
-        color_voc_rows.append(labels_colors[i+1][j-1])
-        color_voc_rows.append(labels_colors[i][j-1])
-        return color_vec_column,color_voc_rows
-    return 0,0
+
+
+    color_vec_column.append(labels_colors[(i+1)%rows][j])
+    color_vec_column.append(labels_colors[(i-1)%rows][j])
+    color_voc_rows.append(labels_colors[(i-1)%rows][(j-1)%columns])
+    color_voc_rows.append(labels_colors[(i-1)%rows][(j+1)%columns])
+    color_voc_rows.append(labels_colors[i][(j+1)%columns])
+    color_voc_rows.append(labels_colors[(i+1)%rows][(j+1)%columns])
+    color_voc_rows.append(labels_colors[(i+1)%rows][(j-1)%columns])
+    color_voc_rows.append(labels_colors[i][(j-1)%columns])
+    return color_vec_column,color_voc_rows
 
 """
 this function counts he number of neighbirs of each 'kind' and decieds which color will the cell be accrding to-
@@ -104,14 +110,17 @@ this function iterates thourgh the labels (cells) and change its color according
 """
 def inverse_colors():
     for i,row in enumerate(labels):
+    
         color_row = []
         for j,label in enumerate(row):
             color = label.cget("bg")
+            color = label
             col_vec,row_vec = get_nieghbours(i,j)
             if col_vec and row_vec:
                 inverse_color = color_count_column(col_vec,row_vec)
                 label.config(bg=inverse_color)
-    root.update()
+                
+    board_frame.update()
     switch_color_labels()
 
 """
@@ -119,6 +128,7 @@ resets the labels_colors matrix to the new given colors
 """
 def switch_color_labels():
     for i,row in enumerate(labels):
+    
         for j,label in enumerate(row):
             color = label.cget("bg")
             labels_colors[i][j] = color
@@ -132,8 +142,8 @@ def col_score():
     for j in range(columns):
         temp_color = labels_colors[0][j]
         temp_max = 0
-        count = 0
-        for i in range(rows):
+        count = 1
+        for i in range(1,rows):
             color = labels_colors[i][j]
             # if colores identical 
             if color == temp_color:
@@ -144,8 +154,11 @@ def col_score():
                     temp_max = count
                 temp_color = color
                 count = 1
+        if (temp_max < count):
+            temp_max = count
         col_scores.append(temp_max)
-    return (sum(col_scores) / columns)
+    avg = sum(col_scores) / (columns*columns)
+    return avg
 
 """
     calculate the score for the rows:
@@ -155,7 +168,7 @@ def col_score():
 def row_score():
     row_scores= []
     for i in range(rows):
-        count = 0
+        count = 1
         temp_color = labels_colors[i][0]
         for j in range(1, columns):
             color = labels_colors[i][j]
@@ -164,49 +177,86 @@ def row_score():
                 temp_color = color
 
         row_scores.append(count)
-    return (sum(row_scores) / rows)
+    avg = sum(row_scores) / (rows*rows)
+    return avg
 
 """
 calculate the board score according to the col_score and row_score, and appends it to the score array
 """
 def total_score():
-    score = (0.4 * col_score()) + (0.6 * row_score())
+    score = ((0.4 * col_score()) + (0.6 * row_score()))*100
     scores.append(score)
 """
 this function runs recursivley the function inverse_colors and apply it on the grid each x ms
 for each run it calculates the board score
 """
 def recu_inverse():
-    
+
     inverse_colors()
-    x=10
     total_score()
-    print(scores)
-    root.after(x, recu_inverse)
+    update_plot()
+    root.after(2, recu_inverse)  # Update every 2 ms
 
 
-"""
-prints which botton has been pressed on the grid
-"""
-def on_button_click(row, col):
-    print(f"Button clicked at ({row}, {col})")
+def update_plot():
+    ax.clear()
+    ax.plot(scores, marker='o')
+    ax.set_xlabel('Iteration')
+    ax.set_ylabel('Score -  %')
+    ax.set_title('Score over Time')
+    canvas.draw()
 
+def plot_performance(y_values_avg, stds):
+    fig ,ax = plt.subplots()
+    ax.plot(range(len(y_values_avg)), y_values_avg)
+    ax.fill_between(range(len(y_values_avg)), y_values_avg - stds, y_values_avg + stds, color='blue', alpha=0.3)
+    ax.plot(range(len(y_values_avg)), y_values_avg - stds, linestyle='dotted', color='blue')
+    ax.plot(range(len(y_values_avg)), y_values_avg + stds, linestyle='dotted', color='blue')
+    ax.set_xlabel('Iteration')
+    ax.set_ylabel('Score %')
+    ax.set_title('Averaged score over Runs')
+    ax.legend(['Average Score', 'Standard Deviation'])
+    plt.show()
+    plt.savefig('performance.png')
+   
+def extract_scores(file):
+    scores = np.genfromtxt(file)
+    avg = scores.mean(axis=0)
+    std = scores.std(axis=0)
+    return avg,std
+def main_loop():
+    global iteration_counter, max_iterations
+    inverse_colors()
+    total_score()
+    update_plot()
+    if iteration_counter < max_iterations - 1:
+        root.after(2, main_loop)
+    
+    
+    
+  
 
-
+    all_scores.append(scores)
 if __name__ == "__main__":
-    output_file = sys.argv[1]
-    # Create the main window
     root = tk.Tk()
     root.title("cell automata")
-
-    #create boad and run the rules
+        # Create a frame for the board
+    board_frame = ttk.Frame(root)
+    board_frame.grid(row=0, column=0, padx=10, pady=10)
     create_board()
-    recu_inverse()
 
-    # show board until closed
+    # Create a frame for the score plot
+    plot_frame = ttk.Frame(root)
+    plot_frame.grid(row=0, column=1, padx=10, pady=10)
+
+    # # Set up the matplotlib figure and axis
+    fig, ax = plt.subplots()
+    canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+    canvas.get_tk_widget().pack()
+    
+    recu_inverse()  # Start the loop with a delay of 2 milliseconds
+
     root.mainloop()
+    
+    
 
-    # print scores to file
-    with open(output_file, 'w') as file:
-        for run, score in enumerate(scores):
-            file.write(f"{run}: {score}\n")  # Write each element on a new line
