@@ -186,19 +186,20 @@ calculate the board score according to the col_score and row_score, and appends 
 def total_score():
     score = ((0.4 * col_score()) + (0.6 * row_score()))*100
     scores.append(score)
-"""
+
+# def recu_inverse():
+    """
 this function runs recursivley the function inverse_colors and apply it on the grid each x ms
 for each run it calculates the board score
 """
-def recu_inverse():
-
-    inverse_colors()
-    total_score()
-    update_plot()
-    root.after(2, recu_inverse)  # Update every 2 ms
+#     inverse_colors()
+#     total_score()
+#     update_plot()
+#     root.after(2, recu_inverse)  # Update every 2 ms
 
 
 def update_plot():
+    '''Update the plot with the new scores.'''
     ax.clear()
     ax.plot(scores, marker='o')
     ax.set_xlabel('Iteration')
@@ -207,6 +208,7 @@ def update_plot():
     canvas.draw()
 
 def plot_performance(y_values_avg, stds):
+    '''Plot the performance of the model over the runs.'''
     fig ,ax = plt.subplots()
     ax.plot(range(len(y_values_avg)), y_values_avg)
     ax.fill_between(range(len(y_values_avg)), y_values_avg - stds, y_values_avg + stds, color='blue', alpha=0.3)
@@ -220,23 +222,30 @@ def plot_performance(y_values_avg, stds):
     plt.savefig('performance.png')
    
 def extract_scores(file):
+    '''Get scores from txt file'''
     scores = np.genfromtxt(file)
     avg = scores.mean(axis=0)
     std = scores.std(axis=0)
     return avg,std
+
 def main_loop():
+    '''Function to run the whole logic with 2 ms gap between each iteration.
+    runs recursivley the function inverse_colors and apply it on the grid each x ms
+for each run it calculates the board score
+'''
     global iteration_counter, max_iterations
     inverse_colors()
     total_score()
     update_plot()
-    if iteration_counter < max_iterations - 1:
+    iteration_counter += 1
+    if iteration_counter < max_iterations:
         root.after(2, main_loop)
     
     
     
   
 
-    all_scores.append(scores)
+    
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("cell automata")
@@ -254,7 +263,7 @@ if __name__ == "__main__":
     canvas = FigureCanvasTkAgg(fig, master=plot_frame)
     canvas.get_tk_widget().pack()
     
-    recu_inverse()  # Start the loop with a delay of 2 milliseconds
+    main_loop()
 
     root.mainloop()
     
