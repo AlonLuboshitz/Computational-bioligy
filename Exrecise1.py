@@ -1,10 +1,13 @@
+# Gili Wolf - 315144907
+# Alon Luboshitz - 312115090
+### The notted lines are for ploting in real time and calculating multiple runs.
 import tkinter as tk
 import random
 from collections import Counter
-import numpy as np
-from tkinter import ttk
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+#import numpy as np
+#from tkinter import ttk
+#import matplotlib.pyplot as plt
+#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 #global variables
 all_scores = []
 labels = []
@@ -32,7 +35,7 @@ def create_board():
             color_row.append(color)
 
             # create label and save it
-            label = tk.Label(board_frame, bg=color, borderwidth=1, relief="solid", width=1, height=1)
+            label = tk.Label(root, bg=color, borderwidth=1, relief="solid", width=1, height=1)
             label.grid(row=row, column=col)
             row_labels.append(label)
 
@@ -120,7 +123,7 @@ def inverse_colors():
                 inverse_color = color_count_column(col_vec,row_vec)
                 label.config(bg=inverse_color)
                 
-    board_frame.update()
+    root.update()
     switch_color_labels()
 
 """
@@ -187,16 +190,6 @@ def total_score():
     score = ((0.4 * col_score()) + (0.6 * row_score()))*100
     scores.append(score)
 
-# def recu_inverse():
-    """
-this function runs recursivley the function inverse_colors and apply it on the grid each x ms
-for each run it calculates the board score
-"""
-#     inverse_colors()
-#     total_score()
-#     update_plot()
-#     root.after(2, recu_inverse)  # Update every 2 ms
-
 
 def update_plot():
     '''Update the plot with the new scores.'''
@@ -236,7 +229,7 @@ for each run it calculates the board score
     global iteration_counter, max_iterations
     inverse_colors()
     total_score()
-    update_plot()
+    #update_plot()
     iteration_counter += 1
     if iteration_counter < max_iterations:
         root.after(2, main_loop)
@@ -250,18 +243,18 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.title("cell automata")
         # Create a frame for the board
-    board_frame = ttk.Frame(root)
-    board_frame.grid(row=0, column=0, padx=10, pady=10)
+    # board_frame = ttk.Frame(root)
+    # board_frame.grid(row=0, column=0, padx=10, pady=10)
     create_board()
 
     # Create a frame for the score plot
-    plot_frame = ttk.Frame(root)
-    plot_frame.grid(row=0, column=1, padx=10, pady=10)
+    # plot_frame = ttk.Frame(root)
+    # plot_frame.grid(row=0, column=1, padx=10, pady=10)
 
     # # Set up the matplotlib figure and axis
-    fig, ax = plt.subplots()
-    canvas = FigureCanvasTkAgg(fig, master=plot_frame)
-    canvas.get_tk_widget().pack()
+    # fig, ax = plt.subplots()
+    # canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+    # canvas.get_tk_widget().pack()
     
     main_loop()
 

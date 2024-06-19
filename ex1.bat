@@ -16,5 +16,5 @@ if %errorlevel% neq 0 (
 )
 
 REM Run the Python script
-python "C:\Users\Gili Wolf\.vscode\Computational-bioligy\Exrecise1.py"
+python "Exrecise1.py"
 pause
