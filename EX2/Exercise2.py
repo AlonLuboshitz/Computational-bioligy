@@ -1,16 +1,19 @@
 import numpy as np
 import pandas as pd
 import random
+import itertools
+from itertools import combinations
 
 # read input
-input_path = "GA_input.txt"
+input_path = "/home/gili/Computational-bioligy/EX2/GA_input.txt"
 GA_input = pd.read_csv(input_path, sep=' ', header=None)
+GA_input = GA_input.map(lambda x : (x-1) )
+print(GA_input)
 couples_population_size = GA_input.shape[1] # =30
 
 # init paremetres
 cost_matrix = np.zeros((couples_population_size,couples_population_size))
-generations = 50
-generations_costs = np.zeros((generations,3))
+generations = 2000
 
 '''
 Function to create cost matrix from priorities (1-based) input.
@@ -74,13 +77,13 @@ def cost_function(sol_matrix):
 '''
 function to add the min,man,avg values of the cost vetor of the gen_num generation.
 '''
-def cost_eval_per_gen(gen_num, cost_vec):
+def cost_eval_per_gen(gen_num, cost_vec,generations_costs):
     generations_costs[gen_num] = [cost_vec.min(), cost_vec.max(), cost_vec.mean()]
 
 """
 Mutate the solution vector by performing a specified number of swaps.
 """
-def mutate_solution(sol_vec, num_of_mutations):
+def mutate_solution(sol_vec, num_of_mutations = 1):
     population = sol_vec.shape[0]
 
     for _ in range(num_of_mutations):
@@ -132,27 +135,103 @@ def cross_over(sol_vec_1, sol_vec_2):
 
     return new_sol_vec_1, new_sol_vec_2
 
-def get_top_sol(cost_vec, best_perc):
-    pass
 
-
-def genetic_algo(population_size,num_of_solutions,generations, mut_perc,cross_perc,best_perc):
+def genetic_algo(population_size,num_of_solutions,generations, mut_perc,cross_perc,best_perc,num_of_mutations):
+    generations_costs = np.zeros((generations,3))
     create_cost_matrix(GA_input,population_size)
     solutions = init_solotions(population_size, num_of_solutions)
+    
 
+    # Calculate the number of solutions for each "alteration"
+    num_best = int((best_perc/100) * num_of_solutions)
+    num_mutate = int((mut_perc/100) * num_of_solutions)
+    num_cross = int((cross_perc/100) * num_of_solutions)
+    if((num_cross % 2) != 0):
+            num_cross+=1
+    num_untouched = num_of_solutions - num_best - num_mutate - num_cross
+    
     for gen in range(generations):
         # evaluate and keep cost of current solutions
         cost_vec = cost_function(solutions)
-        cost_eval_per_gen(gen,cost_vec)
+        cost_eval_per_gen(gen,cost_vec,generations_costs)
 
-        # Sort solutions based on cost (assuming lower cost is better)
+        # Sort solutions based on cost (accending: lower cost is better)
         sorted_indices = np.argsort(cost_vec)
         sorted_solutions = solutions[sorted_indices]
 
+        new_solutions = []
 
-        break
+        # Keep the best solutions
+        new_solutions.extend(sorted_solutions[:num_best])
 
-num_of_solutions = 10
-genetic_algo(couples_population_size,num_of_solutions,generations, 5,5,5 )
+        # mutate random solution and store it in new solutions
+        for i in range(num_mutate):
+            rand_index = random.choice(range(num_of_solutions))
+            mutated_sol = mutate_solution(solutions[rand_index].copy(), num_of_mutations)
+            new_solutions.append(mutated_sol)
+
+        # cross- over
+        for i in range(num_cross //2):
+            indices = random.sample(range(num_of_solutions), 2)
+            index_1 = indices[0]
+            index_2 = indices[1]
+            new_sol_1, new_sol_2 = cross_over(solutions[index_1].copy(), solutions[index_2].copy())
+            new_solutions.extend([new_sol_1, new_sol_2])
+        
+        # add "as is" random sol to fil matrix
+        for i in range(num_untouched):
+            rand_index = random.choice(range(num_of_solutions))
+            new_solutions.append(solutions[rand_index])
+
+        assert(len(new_solutions) == len(solutions))
+
+        solutions = np.array(new_solutions)
+
+        # if (gen % 100 == 0):
+        #     print(f"gen {gen}, cost: {generations_costs[gen]}")
+        # print(f"gen: {gen}, solutions:\n {solutions}\n")
+
+    return generations_costs
+    #print(generations_costs)
+
+
+def grid_search(combinations):
+    results = []
+    for comb in combinations:
+        generations_costs = genetic_algo(couples_population_size, *comb)
+        cost = generations_costs[comb[1] -1]
+        results.append((comb, cost))
+        # print(f" num_of_solutions: {num_of_solutions},generations: {generations}, mut_perc: {mut_perc},cross_perc: {cross_perc},best_perc: {best_perc},num_of_mutations: {num_of_mutations}\ncost: {generations_costs[generations-1]}\n ----------------------------------------\n")
+    return results
+
+num_of_solutions = range(100, 201, 10)
+generations = range(100,201,10)
+
+sol_and_gen_combinations = list(itertools.product(num_of_solutions,generations))
+sol_range = []
+gen_range = []
+for comb in sol_and_gen_combinations:
+    if ((comb[0] * comb[1]) == 18000):
+        sol_range.append(comb[0])
+        gen_range.append(comb[1])
+
+
+mut_perc = range(1, 16, 5)
+cross_perc = range(1, 16, 5)
+best_perc = range(1, 16, 5)
+num_of_mutations = range(1,4,1)
+
+all_combinations = list(itertools.product(sol_range, gen_range,mut_perc,cross_perc,best_perc,num_of_mutations))
+
+results = grid_search(all_combinations[100:120])
+print(results)
+results.sort(key=lambda x: x[1][0])
+    
+# Get top 10 combinations
+best_10_combinations = results[:10]
+    
+for comb, cost in best_10_combinations:
+        print(f"Best Combination -> num_of_solutions: {comb[0]}, generations: {comb[1]}, mut_perc: {comb[2]}, cross_perc: {comb[3]}, best_perc: {comb[4]}, num_of_mutations: {comb[5]}\ncost: {cost}\n ----------------------------------------\n")
+
 
 
