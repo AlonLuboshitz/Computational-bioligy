@@ -3,17 +3,11 @@ import pandas as pd
 import random
 import itertools
 from itertools import combinations
-
+from matplotlib import pyplot as plt
+import sys
 # read input
-input_path = "/home/gili/Computational-bioligy/EX2/GA_input.txt"
-GA_input = pd.read_csv(input_path, sep=' ', header=None)
-GA_input = GA_input.map(lambda x : (x-1) )
-print(GA_input)
-couples_population_size = GA_input.shape[1] # =30
+input_path = "/home/alon/Comp_bio/Targilim/Computational-bioligy/EX2/GA_input.txt"
 
-# init paremetres
-cost_matrix = np.zeros((couples_population_size,couples_population_size))
-generations = 2000
 
 '''
 Function to create cost matrix from priorities (1-based) input.
@@ -191,9 +185,15 @@ def genetic_algo(population_size,num_of_solutions,generations, mut_perc,cross_pe
         #     print(f"gen {gen}, cost: {generations_costs[gen]}")
         # print(f"gen: {gen}, solutions:\n {solutions}\n")
 
-    return generations_costs
-    #print(generations_costs)
+    return [generations-1][0], sorted_solutions[0]
 
+    #print(generations_costs)
+def parse_gen_algo_output(min_cost, best_solution):
+    worst_cost = couples_population_size * (couples_population_size - 1) * 2
+    score = ((worst_cost - min_cost) / worst_cost) * 100
+    best_solution = best_solution + 1
+    print(f"Best solution: {best_solution}")
+    print(f"Best score: {score:.2f} %")
 
 def grid_search(combinations):
     results = []
@@ -204,34 +204,121 @@ def grid_search(combinations):
         # print(f" num_of_solutions: {num_of_solutions},generations: {generations}, mut_perc: {mut_perc},cross_perc: {cross_perc},best_perc: {best_perc},num_of_mutations: {num_of_mutations}\ncost: {generations_costs[generations-1]}\n ----------------------------------------\n")
     return results
 
-num_of_solutions = range(100, 201, 10)
-generations = range(100,201,10)
-
-sol_and_gen_combinations = list(itertools.product(num_of_solutions,generations))
-sol_range = []
-gen_range = []
-for comb in sol_and_gen_combinations:
-    if ((comb[0] * comb[1]) == 18000):
-        sol_range.append(comb[0])
-        gen_range.append(comb[1])
-
-
-mut_perc = range(1, 16, 5)
-cross_perc = range(1, 16, 5)
-best_perc = range(1, 16, 5)
-num_of_mutations = range(1,4,1)
-
-all_combinations = list(itertools.product(sol_range, gen_range,mut_perc,cross_perc,best_perc,num_of_mutations))
-
-results = grid_search(all_combinations[100:120])
-print(results)
-results.sort(key=lambda x: x[1][0])
+def run_grid_search():
+    # create solutions number range and generation number range that gen*sol =18k
+    num_of_solutions = range(100, 201, 10)
+    generations = range(100,201,10)
+    sol_and_gen_combinations = list(itertools.product(num_of_solutions,generations))
+    sol_range_gen_range = []
+    for comb in sol_and_gen_combinations: 
+        if ((comb[0] * comb[1]) == 18000):
+            sol_range_gen_range.append((comb[0],comb[1]))
+            
+    # create all combinations of the parameters
+    mut_perc = range(1, 31, 10)
+    cross_perc = range(1, 31, 10)
+    best_perc = range(1, 31, 10)
+    num_of_mutations = range(1,4,1)
+    all_combinations = list(itertools.product(sol_range_gen_range,mut_perc,cross_perc,best_perc,num_of_mutations))
+    all_combinations = [(comb[0][0],comb[0][1],comb[1],comb[2],comb[3],comb[4]) for comb in all_combinations]
+    results = grid_search(all_combinations)
+    results.sort(key=lambda x: x[1][0])
+    best_50_combinations = results[:50]
     
-# Get top 10 combinations
-best_10_combinations = results[:10]
     
-for comb, cost in best_10_combinations:
-        print(f"Best Combination -> num_of_solutions: {comb[0]}, generations: {comb[1]}, mut_perc: {comb[2]}, cross_perc: {comb[3]}, best_perc: {comb[4]}, num_of_mutations: {comb[5]}\ncost: {cost}\n ----------------------------------------\n")
+    # save results to file
+    solution_series = [comb[0] for comb,cost in best_50_combinations]
+    gen_series = [comb[1] for comb,cost in best_50_combinations]
+    mut_perc_series = [comb[2] for comb,cost in best_50_combinations]
+    cross_perc_series = [comb[3] for comb,cost in best_50_combinations]
+    best_perc_series = [comb[4] for comb,cost in best_50_combinations]
+    num_of_mutations_series = [comb[5] for comb,cost in best_50_combinations]
+    results_df = pd.DataFrame({'num_of_solutions': solution_series, 'generations': gen_series, 'mut_perc': mut_perc_series, 'cross_perc': cross_perc_series, 'best_perc': best_perc_series, 'num_of_mutations': num_of_mutations_series })
+    results_df.to_csv("results.txt",index=False)
+
+def plot_score(ax,costs,sultions_number,generations,mut_prec,cross_perc,best_perc,num_of_mutations):
+    '''This function plot the costs generated from a spesific run.
+    Args:
+    1. costs = the min,avg,max costs of each generation
+    2. params = the parameters of the run - generation number,solution number,mutation percentage,cross over percentage,best percentage,number of mutations
+    ----------
+    returns a sub plot of the costs
+    '''
+    generations_range = range(1,generations+1)
+    mins = [cost[0] for cost in costs]
+    maxs = [cost[1] for cost in costs]
+    avgs = [cost[2] for cost in costs]
+    ax.scatter(generations_range, mins, color='blue', label='min')
+    
+    ax.scatter(generations_range, avgs, color='green', label='average')
+    ax.scatter(generations_range, maxs, color='red', label='maximum')
+    ax.plot(generations_range, mins, color='blue')
+    ax.plot(generations_range, avgs, color='green')
+    ax.plot(generations_range, maxs, color='red')
+
+    # Set title and labels
+    ax.set_title(f'Results for {sultions_number} solutions with {generations} generations\n mutation percentage: {(mut_prec-1)}%, cross over percentage: {cross_perc-1}%, best percentage: {best_perc-1}%, number of mutations: {num_of_mutations}',fontsize=6)
+    ax.set_xlabel('generation number')
+    ax.set_ylabel('Scores')
+    return ax
 
 
 
+def main_plot(values):
+    # Create a figure with subplots
+    cols =int(len(values)/2) 
+    fig, axs = plt.subplots(2, cols, figsize=(12, 10))
+    # Create scatter plots in separate functions
+    for i, (params, costs) in enumerate(values):
+        plot_score(axs[i // (len(values) // 2), i % (len(values) // 2)], costs, *params)
+    
+    # Set common x and y labels
+    fig.text(0.5, 0.04, 'generation number', ha='center', va='center', fontsize=12)
+    fig.text(0.06, 0.5, 'Scores', ha='center', va='center', rotation='vertical', fontsize=12)
+
+    # Create a single legend for the entire figure
+    handles, labels = axs[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper right')
+     # Adjust layout
+    plt.tight_layout()
+    
+    # Show the plot
+    plt.show()
+    
+    # Save the plot
+    fig.savefig("scatter_plots.png")
+
+def plot_best_combinations():
+    results_df = pd.read_csv("results.txt")
+    # find first indexes of each unique number of solutions
+    unique_solutions = results_df['num_of_solutions'].unique()
+    first_indexes = []
+    for solution in unique_solutions:
+        first_index = results_df.index[results_df['num_of_solutions'] == solution][0]
+        first_indexes.append(first_index)
+    values = []
+    # Get sol_num,gen_num,mut_perc,cross_perc,best_perc,num_of_mutations for each unique number of solutions
+    for index in first_indexes:
+        params_tuple = (results_df['num_of_solutions'][index], results_df['generations'][index], results_df['mut_perc'][index], results_df['cross_perc'][index], results_df['best_perc'][index], results_df['num_of_mutations'][index])
+        cost_per_run = genetic_algo(couples_population_size,*params_tuple)
+        values.append((params_tuple, cost_per_run))
+    # Plots results
+    main_plot(values) 
+
+
+
+
+def init_input(path):
+    global couples_population_size,cost_matrix, GA_input
+    GA_input = pd.read_csv(input_path, sep=' ', header=None)
+    GA_input = GA_input.applymap(lambda x : (x-1) )
+    couples_population_size = GA_input.shape[1] # =30
+
+    # init paremetres
+    cost_matrix = np.zeros((couples_population_size,couples_population_size))
+if __name__ == "__main__":
+    init_input(sys.argv[1])
+    #run_grid_search()
+    #run_genetic_algo()
+    cost,sul = genetic_algo(couples_population_size,100,180,10,10,10,1)
+    parse_gen_algo_output(cost,sul)
