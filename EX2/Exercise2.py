@@ -5,8 +5,7 @@ import itertools
 from itertools import combinations
 from matplotlib import pyplot as plt
 import sys
-# read input
-input_path = "/home/alon/Comp_bio/Targilim/Computational-bioligy/EX2/GA_input.txt"
+
 
 
 '''
@@ -310,7 +309,7 @@ def plot_best_combinations():
 
 def init_input(path):
     global couples_population_size,cost_matrix, GA_input
-    GA_input = pd.read_csv(input_path, sep=' ', header=None)
+    GA_input = pd.read_csv(path, sep=' ', header=None)
     GA_input = GA_input.applymap(lambda x : (x-1) )
     couples_population_size = GA_input.shape[1] # =30
 
