@@ -28,7 +28,7 @@ def get_closest_neuron(x, matrix):
     if len(x) != matrix.shape[1]:
         raise ValueError('Input vector x has wrong dimension')
     # Calculate the Euclidean distances between x and each row of A_reshaped
-    distances = np.linalg.norm(matrix - x, axis=1)
+    distances = np.linalg.norm(matrix - x, axis=2)
     # Find the flat index of the row with the minimum distance
     min_flat_index = np.argmin(distances)
     
@@ -72,25 +72,25 @@ class HexagonalMatrix:
         '''
         self.init_matrix(sparse_perc)
         # Do self.init_matrix(X) for initating the matrix with values from X
-        
         iteration = 0
-        while self.time_passed < max_time or iteration < max_iter:
+        while self.time_passed < max_time and iteration < max_iter:
             for x_index, x_vector in enumerate(X):
                 start_time = time.time()
-                reshaped_matrix = transfrom_to_nd(self.matrix)
-                min_neuron_index = get_closest_neuron(x_vector, reshaped_matrix)
+                min_neuron_index = get_closest_neuron(x_vector, self.matrix)
                 x_prototypes[x_index] = min_neuron_index
                 i,j = np.unravel_index(min_neuron_index, (self.rows, self.cols))
 
-                learning_rates = [0.1,0.05,0.02]
+                learning_rates = [0.2,0.1,0.05]
                 # update nuerons:
                 self.update_prototype(i, j, x_vector, learning_rates[0])
+
                 for level in range(1,levels+1):
                     self.update_neighbors(i, j, x_vector, level=level, learning_rate = learning_rates[level])
                 
                 # manage time handeling 
                 end_time = time.time()
                 self.time_passed += (end_time - start_time)
+            print(f"Finished {iteration+1} iteration out of {max_iter}\nTime passed: {self.time_passed:.2f} sec")    
             iteration += 1  
         self.time_passed = 0    
         return x_prototypes
@@ -124,7 +124,7 @@ class HexagonalMatrix:
     
     def update_prototype(self, row, col, x_vector, learning_rate = 0.1):
         if 0 <= row < self.rows and 0 <= col < self.cols:
-            distance = (self.matrix[row, col] - x_vector)   
+            distance = ( x_vector - self.matrix[row, col])   
             self.matrix[row, col] = (self.matrix[row, col] + (learning_rate * distance))
     
     # def update_value(self, row, col, value):
@@ -199,6 +199,7 @@ class HexagonalMatrix:
         
         # Get unique labels and assign colors
         unique_labels = label_df['label'].unique()
+        
         color_palette = sns.color_palette("hsv", len(unique_labels))
         label_to_color = {label: color for label, color in zip(unique_labels, color_palette)}
 
@@ -218,8 +219,8 @@ class HexagonalMatrix:
                     most_frequent_label, percentage = value
                     # Adjust color based on percentage
                     base_color = label_to_color[most_frequent_label]
-                    alpha = percentage / 100  # Scale percentage to [0, 1] for alpha
-                    rgba_color = (*base_color, alpha)
+                    #alpha = percentage / 100  # Scale percentage to [0, 1] for alpha
+                    rgba_color = base_color#, alpha)
                     ax.text(x, y, f'{most_frequent_label}\n{percentage:.1f}%', ha='center', va='center', size=6)
                     hexagon.set_facecolor(rgba_color)
                 else:
@@ -247,13 +248,12 @@ def get_neuron_label(nueron_index, prototypes, labels):
 
 
 def main(n_cols = 10,n_rows = 10):
-    X = pd.read_csv("/home/gili/Computational-bioligy/EX3/digits_test.csv")
+    X = pd.read_csv("EX3/digits_test.csv")
     X = np.array(X)
-
     x_prototypes = init_x_prototypes(X, n_cols * n_rows)
     hex_matrix = HexagonalMatrix(n_rows,n_cols,784)
-    label_df = pd.read_csv("/home/gili/Computational-bioligy/EX3/digits_keys.csv", header=None, names=["label"]) # labels
-    x_prototypes = hex_matrix.fit_x(X, x_prototypes,sparse_perc =0.8, levels=2, max_iter=10, max_time=20)
+    label_df = pd.read_csv("EX3/digits_keys.csv", header=None, names=["label"]) # labels
+    x_prototypes = hex_matrix.fit_x(X, x_prototypes,sparse_perc =0.8, levels=2, max_iter=30, max_time=60)
     hex_matrix.display_matrix(x_prototypes,label_df)
 
 
