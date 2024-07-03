@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import time
 from matplotlib.patches import RegularPolygon
 
 
@@ -14,12 +15,12 @@ def transfrom_to_nd(matrix):
     n = matrix.shape[0] * matrix.shape[1]
     A_reshaped = matrix.reshape(n, -1)
     return A_reshaped
-def get_closest_neuron(x, matrix, n_sqrt):
+def get_closest_neuron(x, matrix):
     '''Function iterate the matrix and return the neuron closest to the input x
     Args:
     1. x: input vector
     2. matrix: matrix of neurons (each row is a neuron, each column is a feature)
-    3. n_sqrt: number of rows/cols in the original matrix
+  
     -----------
     Returns:
     The flat index of the closest neuron'''
@@ -33,7 +34,7 @@ def get_closest_neuron(x, matrix, n_sqrt):
     
     return min_flat_index
 
-def init_x_neurons(X, n_neurons):
+def init_x_prototypes(X, n_neurons):
     '''Function to init the neruons labels for the x data
     Args:
     1. X: input data (n_samples, d_features)
@@ -54,17 +55,59 @@ class HexagonalMatrix:
     def __init__(self, rows, cols, pixels):
         self.rows = rows
         self.cols = cols
+        self.pixels = pixels
+        self.time_passed = 0
         self.matrix = np.zeros((rows, cols,pixels))
+    
+    def fit_x(self,X, x_prototypes, max_iter = 100):
+        '''Function to "train" the matrix to fit the input data.
+        Args:
+        1. X: np.array (n_samples, d_features)
+        2. x_prototypes: np.array (n_samples,) with the prototypes indices for each input.
+        3. max_iter: int, number of iterations
+        The function: 
+        - init the matrix
+        - transform it into (n^2,d)
+        '''
+        self.init_matrix()
+        # Do self.init_matrix(X) for initating the matrix with values from X
+        
+        iteration = 0
+        while self.time_passed < 180 and iteration < max_iter:
+            for x_index, x_vector in enumerate(X):
+                start_time = time.time()
+                reshaped_matrix = transfrom_to_nd(self.matrix)
+                min_neuron_index = get_closest_neuron(x_vector, reshaped_matrix)
+                x_prototypes[x_index] = min_neuron_index
+                i,j = np.unravel_index(min_neuron_index, (self.rows, self.cols))
+                self.update_neighbors(i, j, x_vector)
+                end_time = time.time()
+                self.time_passed += end_time - start_time
+            iteration += 1  
+        self.time_passed = 0    
+        return x_prototypes
+        
+    def init_matrix(self, X = None):
+        '''Function init matrix randomly or by values sampled from X.
+        Args:
+        1. X - np.array (n_samples, d_features)
+        -----------
+        Sets: the self matrix with values drawn from X disterbution.'''
+        if X is None:
+            self.matrix = np.random.randint(0, 258, size=(self.rows, self.cols, self.pixels))
+        else : pass ## Implement this part
+        
     def get_matrix(self):
         return self.matrix
-    def update_value(self, row, col, value):
+    def update_prototype(self, row, col, x_vector, learning_rate = 0.1):
         if 0 <= row < self.rows and 0 <= col < self.cols:
-            self.matrix[row, col] = value
+            distance = self.matrix[row, col] - x_vector
+            self.matrix[row, col] = self.matrix[row, col] + learning_rate * distance
     
-    def update_neighbors(self, row, col, value):
+    def update_neighbors(self, row, col, x_vector):
         neighbors = self.get_neighbors(row, col)
         for r, c in neighbors:
-            self.update_value(r, c, value)
+            self.update_prototype(r, c, x_vector)
     
     def get_neighbors(self, row, col):
         if col % 2 == 0:
@@ -100,13 +143,16 @@ class HexagonalMatrix:
         plt.ylim(-hex_size, self.rows * np.sqrt(3) * hex_size)
         plt.axis('off')
         plt.show()
+def main(n_cols = 10,n_rows = 10):
+    X = pd.read_csv("EX3/digits_test.csv")
+    X = np.array(X)
+    x_prototypes = init_x_prototypes(X, n_cols * n_rows)
+    hex_matrix = HexagonalMatrix(n_rows,n_cols,X.shape[1])
+    x_prototypes = hex_matrix.fit_x(X, x_prototypes)
+    print(x_prototypes[:5])
+if __name__ == "__main__":
+    main()
+    # Example usage
 
-# Example usage
-hex_matrix = HexagonalMatrix(5, 5,5)
-hex_matrix.update_value(2,2, np.array([1,3,3,3,1]))
-#hex_matrix.update_neighbors(2, 2, 2)
-hex_matrix.display_matrix()
-# X = pd.read_csv("EX3/digits_test.csv")
-# X = np.array(X)
-# x_neurons = init_x_neurons(X, 100)
+
 # print(x_neurons.shape,x_neurons[0])
