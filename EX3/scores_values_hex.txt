@@ -1,0 +1,50 @@
+Net number 1:
+Total topo score: 22
+Topo scores: [1, 1, 1, 1, 1, 1, 1, 5, 4, 6]
+Learning_rates: (0.2, 0.18333333333333335, 0.030000000000000006)
+
+Net number 2:
+Total topo score: 21
+Topo scores: [2, 2, 2, 3, 2, 1, 3, 2, 2, 2]
+Learning_rates: (0.8, 0.06666666666666668, 0.06000000000000001)
+
+Net number 3:
+Total topo score: 14
+Topo scores: [1, 1, 1, 2, 2, 1, 3, 1, 1, 1]
+Learning_rates: (0.6000000000000001, 0.08333333333333334, 0.08)
+
+Net number 4:
+Total topo score: 22
+Topo scores: [1, 2, 1, 1, 1, 2, 5, 1, 2, 6]
+Learning_rates: (0.8, 0.2, 0.08)
+
+Net number 5:
+Total topo score: 25
+Topo scores: [1, 7, 1, 1, 1, 1, 2, 4, 3, 4]
+Learning_rates: (0.6000000000000001, 0.05, 0.07)
+
+Net number 6:
+Total topo score: 10
+Topo scores: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+Learning_rates: (0.2666666666666667, 0.16666666666666669, 0.08)
+
+Net number 7:
+Total topo score: 17
+Topo scores: [1, 1, 1, 1, 1, 1, 1, 2, 7, 1]
+Learning_rates: (0.33333333333333337, 0.08333333333333334, 0.030000000000000006)
+
+Net number 8:
+Total topo score: 17
+Topo scores: [1, 3, 1, 3, 1, 1, 2, 1, 3, 1]
+Learning_rates: (0.4, 0.08333333333333334, 0.05000000000000001)
+
+Net number 9:
+Total topo score: 22
+Topo scores: [1, 2, 1, 2, 1, 1, 3, 2, 8, 1]
+Learning_rates: (0.06000000000000001, 0.08333333333333334, 0.33333333333333337)
+
+Net number 10:
+Total topo score: 23
+Topo scores: [1, 6, 3, 1, 3, 1, 1, 1, 4, 2]
+Learning_rates: (0.09000000000000001, 0.18333333333333335, 0.5333333333333334)
+
