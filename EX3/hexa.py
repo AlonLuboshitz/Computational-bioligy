@@ -67,6 +67,25 @@ def best_net_search(net_num, n_cols = 10, n_rows = 10):
             topo_scores = topological_score(X,label_indices, matrix)
             f.write(f"Net number {i+1}:\nTotal topo score: {sum(topo_scores)}\nTopo scores: {topo_scores}\nLearning_rates: {rates}\n\n")
             print(f"Finished net number {i+1} out of {net_num}")
+def different_size_nets():
+    X = pd.read_csv("EX3/digits_test.csv")
+    X = np.array(X)
+    label_df = pd.read_csv("EX3/digits_keys.csv", header=None, names=["label"]) # labels
+    label_indices = get_labels_indexes(label_df) # Get index for each label for further comparison
+    learning_rate = (0.2666666666666667, 0.16666666666666669, 0.08)
+    sizes = [(18,18),(36,36),(50,50)]
+    for size in sizes:
+        n_cols,n_rows = size
+        outputpath = f"/home/alon/Comp_bio/Targilim/Computational-bioligy/EX3/plots/{n_cols}x{n_rows}.png"
+        print(f'Running net number {n_cols}x{n_rows} out of {sizes}')
+        x_prototypes = init_x_prototypes(X, n_cols * n_rows)
+        x_prototypes,matrix = main(label_df,X,x_prototypes,outputpath,learning_rate,n_cols, n_rows)
+        topo_scores = topological_score(X,label_indices, matrix)
+        with open("diffrenet_hex.txt", "a") as f:
+            f.write(f"Net number {n_cols}x{n_rows}:\nTotal topo score: {sum(topo_scores)}\nTopo scores: {topo_scores}\n\n")
+
+   
+
 def get_labels_indexes(label_df):
     '''Get 1 index from each uniue label in the label_df'''
     unique_labels = label_df['label'].unique()
@@ -162,7 +181,7 @@ class HexagonalMatrix:
 
          # Create arrays
         zeros_array = np.zeros(n_zeros, dtype=int)
-        random_array = np.random.randint(1, 258, size=n_random)  # Random ints between 1 and 257
+        random_array = np.random.randint(1, 255, size=n_random)  # Random ints between 1 and 257
 
         # Concatenate arrays
         combined_array = np.concatenate((zeros_array, random_array))
@@ -248,7 +267,7 @@ class HexagonalMatrix:
         # final_neigbors = neighbors[level] - old_neighbors
         # return final_neigbors
     
-    def display_matrix(self, x_prototypes, label_df,output_path):
+    def display_matrix(self, x_prototypes, label_df,output_path,topo_scores):
         fig, ax = plt.subplots(1, figsize=(10, 10))
         ax.set_aspect('equal')
         
@@ -287,9 +306,12 @@ class HexagonalMatrix:
         ax.legend(handles = legend_handles)
         plt.xlim(-hex_size, self.cols * hex_size * 3/2)
         plt.ylim(-hex_size, self.rows * np.sqrt(3) * hex_size)
+        
+        t = plt.text(0, 0, f"Total topological score: {sum(topo_scores)}", transform=ax.transAxes, fontsize=12)
+        t.set_bbox(dict(facecolor='white', alpha=0.3, edgecolor='red'))
         plt.axis('off')
-        #plt.show()
-        plt.savefig(output_path)
+        plt.show()
+        #plt.savefig(output_path)
 
 def get_neuron_label(nueron_index, prototypes, labels):
     prototypes = pd.DataFrame(prototypes, columns=["prototypes"])
@@ -307,19 +329,27 @@ def get_neuron_label(nueron_index, prototypes, labels):
 
 
 
-def main(label_df,X,x_prototypes,output_path,rates,n_cols = 10,n_rows = 10):
+def main(label_df,X,x_prototypes,output_path,rates,n_cols = 10,n_rows = 10,label_indices = None):
     # X = pd.read_csv("EX3/digits_test.csv")
     # X = np.array(X)
     # x_prototypes = init_x_prototypes(X, n_cols * n_rows)
+    
     hex_matrix = HexagonalMatrix(n_rows,n_cols,784)
     # label_df = pd.read_csv("EX3/digits_keys.csv", header=None, names=["label"]) # labels
-    x_prototypes = hex_matrix.fit_x(X, x_prototypes,rates,sparse_perc =0.8, levels=2, max_iter=100, max_time=90)
-    hex_matrix.display_matrix(x_prototypes,label_df,output_path)
+    x_prototypes = hex_matrix.fit_x(X, x_prototypes,rates,sparse_perc =0.8, levels=2, max_iter=100, max_time=20)
+    topo_scores = topological_score(X,label_indices, hex_matrix.get_matrix())
+    hex_matrix.display_matrix(x_prototypes,label_df,output_path,topo_scores)
     return x_prototypes,hex_matrix.get_matrix()
 
 
 if __name__ == "__main__":
-    
-    best_net_search(10)
+    X = pd.read_csv("digits_test.csv")
+    X = np.array(X)
+    label_df = pd.read_csv("digits_keys.csv", header=None, names=["label"]) # labels
+    label_indices = get_labels_indexes(label_df) # Get index for each label for further comparison
+    learning_rate = (0.2666666666666667, 0.16666666666666669, 0.08)
+    n_cols,n_rows = 10,10
+    x_prototypes = init_x_prototypes(X, n_cols * n_rows)
+    x_prototypes,matrix = main(label_df,X,x_prototypes,None,learning_rate,n_cols, n_rows,label_indices)
     
 
